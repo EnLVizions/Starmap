@@ -1,0 +1,38 @@
+{
+ "generated_utc": "2026-10-19T23:55:08+00:00",
+ "dmax_ly": 50.0,
+ "weights": {
+  "distance": 0.3333333333333333,
+  "habitability": 0.3333333333333333,
+  "route": 0.3333333333333333
+ },
+ "ship": {
+  "v_cruise_c": 0.23,
+  "boost_t_yr": 2.923542981722311,
+  "boost_x_ly": 0.3671112228079347,
+  "boost_tau_yr": 2.8938558250401947,
+  "magsail_t_yr": 22.516529677291746,
+  "magsail_x_ly": 2.452154663532524,
+  "fusion_t_yr": 1.9378177614609784,
+  "fusion_v0_c": 0.02,
+  "fusion_a_g": 0.01,
+  "doc_total_earth_yr": 33.47073361793949,
+  "doc_total_crew_yr": 33.09422248721085,
+  "doc_D_ly": 4.24
+ },
+ "trip_check": {
+  "earth": 33.47073361793949,
+  "crew": 33.09422248721085,
+  "coast_earth": 18.434782608695652,
+  "coast_crew": 17.94055767889805,
+  "gamma": 1.0275479134285173,
+  "X_fixed": 2.838646064583176,
+  "T_fixed": 27.377890420475033,
+  "TAU_fixed": 27.164724584640968,
+  "x_fusion": 0.019380178242717205,
+  "tau_magsail": 22.333180214419492
+ },
+ "no_planet_factor": 0.5,
+ "version": "v3",
+ "rank_basis": "v2 scorer unchanged; v3 planet statuses applied (candidate/disputed -> 0.5 weight as for NASA-controversial); see raw/findings/rank_check"
+}

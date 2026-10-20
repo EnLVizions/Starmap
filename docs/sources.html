@@ -1,0 +1,960 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Sources</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:1100px;margin:2em auto;padding:0 1em;background:#0b1020;color:#dfe6f3}a{color:#8fc7ff}table{border-collapse:collapse;font-size:12.5px}td,th{border:1px solid #2a3654;padding:2px 5px;vertical-align:top}code{background:#18213a;padding:0 3px}</style></head><body><p><a href="../index.html">← Home</a></p><h1>Pythagoras Star Map v2 (≤50 ly) and v1.2 (≤20 ly): sources, methods and limitations</h1>
+<p>(Earlier text kept unchanged in <code>SOURCES_v1.md</code> and <code>SOURCES_v1.1.md</code>; all earlier outputs <code>starmap_v1*.*</code>, <code>planets_v1*.csv</code> are kept. <code>SOURCES_v1.2.md</code> is a copy of this file.)</p>
+<p>Build date: <strong>2026-10-17</strong> (UTC). Two builds from the same code:
+- <strong>v1.2</strong>: primaries within <strong>20 ly (6.13 pc)</strong>: <strong>98 systems, 61 confirmed planets</strong> (14 in the conservative HZ, 19 conservative or optimistic). Gas-cloud (LISM) lookup done for <strong>all 98</strong> sight lines.
+- <strong>v2</strong>: primaries within <strong>50 ly (15.33 pc)</strong> (<code>STARMAP_DMAX_LY=50 STARMAP_VERSION=v2</code>): <strong>1267 systems, 229 confirmed planets in 123 host systems</strong> (30 in the conservative HZ, 46 conservative or optimistic). LISM lookup done for <strong>193 sight lines</strong> (every planet host and every system in the top 181); the other 1074 systems (all without known planets) are <code>unknown</code> and flagged.</p>
+<p>No value in the outputs was typed in by hand except the Redfield &amp; Linsky calculator results (source 6), which were copied verbatim from the calculator's responses.</p>
+<h2>1. Data sources (credited by institution and country)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Source</th>
+<th>Institution / country</th>
+<th>What it supplied</th>
+<th>Endpoint + exact query</th>
+<th>Retrieved (UTC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>NASA Exoplanet Archive</strong>, table <code>pscomppars</code></td>
+<td>NASA Exoplanet Science Institute, Caltech/IPAC, <strong>USA</strong></td>
+<td>Planet name, host, mass / M sin i, (estimated) radius, period, semi-major axis, eccentricity, Teq, insolation, controversy flag, discovery method/facility/year/reference, host Teff and luminosity</td>
+<td><code>https://exoplanetarchive.ipac.caltech.edu/TAP/sync?format=csv&amp;query=</code> <code>select pl_name,hostname,sy_snum,sy_pnum,sy_dist,sy_disterr1,sy_disterr2,pl_bmasse,pl_bmasseerr1,pl_bmasseerr2,pl_bmassprov,pl_rade,pl_radeerr1,pl_orbper,pl_orbsmax,pl_orbeccen,pl_eqt,pl_insol,pl_controv_flag,tran_flag,discoverymethod,disc_facility,disc_year,disc_refname,st_spectype,st_teff,st_lum,st_mass,st_rad,ra,dec,gaia_dr3_id,hip_name,pl_pubdate from pscomppars where sy_dist &lt; 6.316 order by sy_dist</code></td>
+<td>v1.1: 2026-10-17T05:24:42Z (65 rows). <strong>v1.2</strong> refetched with <code>sy_dist &lt; 9.19</code> (1.5× margin, see changelog): 102 rows, 61 inside 20 ly. <strong>v2</strong>: <code>sy_dist &lt; 22.995</code>, 2026-10-17T06:22:38Z, 399 rows, 229 inside 50 ly</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>ESA Gaia DR3</strong>, <code>gaiadr3.gaia_source</code></td>
+<td>European Space Agency, Gaia DPAC, <strong>Europe</strong> (archive at ESAC, Spain)</td>
+<td>RA, Dec, parallax ± error, proper motion, G, BP-RP, radial velocity, RUWE</td>
+<td><code>https://gea.esac.esa.int/tap-server/tap/sync</code> (ADQL) <code>SELECT source_id, ra, dec, ra_error, dec_error, parallax, parallax_error, pmra, pmdec, phot_g_mean_mag, bp_rp, radial_velocity, radial_velocity_error, ruwe, l, b FROM gaiadr3.gaia_source WHERE parallax &gt; 158.33 ORDER BY parallax DESC</code></td>
+<td>20 ly: 2026-10-17T05:25:16Z (100 rows, all cross-matched to SIMBAD). <strong>v2</strong>: <code>parallax &gt; 63.33</code>, 2026-10-17T05:58:10Z, 1268 rows; 3 faint sources (G 19–21) have no SIMBAD counterpart and are listed in <code>gaia_unmatched_sources_v2.csv</code>, not mapped</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>SIMBAD</strong> (<code>basic</code>, <code>ids</code>, <code>allfluxes</code>)</td>
+<td>Centre de Données astronomiques de Strasbourg (CDS), Université de Strasbourg / CNRS, <strong>France</strong></td>
+<td>Main IDs, common names, all identifiers (Gaia DR3, GJ, HIP), spectral types, object types, V/G magnitudes, adopted parallax with bibcode</td>
+<td><code>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</code> <code>SELECT b.oid, b.main_id, b.ra, b.dec, b.plx_value, b.plx_err, b.plx_bibcode, b.sp_type, b.sp_bibcode, b.otype, b.rvz_radvel, b.rvz_err, b.rvz_bibcode, b.pmra, b.pmdec, i.ids, f."V" AS vmag, f."G" AS gmag FROM basic AS b JOIN ids AS i ON i.oidref=b.oid LEFT JOIN allfluxes AS f ON f.oidref=b.oid WHERE b.plx_value &gt; 158.33 ORDER BY plx_value DESC</code></td>
+<td>20 ly: 2026-10-17T05:25:18Z (231 rows incl. planets). <strong>v2</strong>: <code>plx_value &gt; 63.33</code>, 2026-10-17T06:00:03Z, 1912 rows</td>
+</tr>
+<tr>
+<td>3b</td>
+<td>SIMBAD hierarchy <code>h_link</code></td>
+<td>CDS, France</td>
+<td>Parent/child links for multiple systems</td>
+<td><code>SELECT h.child, h.parent, h.link_bibcode, h.membership FROM h_link AS h JOIN basic AS b ON b.oid=h.child WHERE b.plx_value &gt; 158.33</code></td>
+<td>2026-10-17T05:25:18Z; v2 (<code>&gt; 63.33</code>): 06:02:56Z, 837 rows</td>
+</tr>
+<tr>
+<td>3c</td>
+<td>SIMBAD <code>otypes</code></td>
+<td>CDS, France</td>
+<td>All object types per star (flags like <code>Er*</code> eruptive/flare, <code>BY*</code>, <code>RS*</code>, <code>Ro*</code>)</td>
+<td><code>SELECT o.oidref, o.otype, o.origin FROM otypes AS o JOIN basic AS b ON b.oid=o.oidref WHERE b.plx_value &gt; 158.33</code></td>
+<td>2026-10-17T05:25:53Z; v2 (<code>&gt; 63.33</code>): 06:21:37Z, 9990 rows</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Hipparcos</strong> new reduction (van Leeuwen 2007, A&amp;A 474, 653) and Pourbaix et al. 1997 (via SIMBAD)</td>
+<td><strong>ESA</strong>, Europe</td>
+<td>Parallaxes for bright stars that Gaia DR3 saturates on or lacks: Sirius, Procyon, Altair, 70 Oph, 36 Oph, alpha Cen A/B (Pourbaix 1997, A&amp;A 323, L49)</td>
+<td>via SIMBAD <code>plx_bibcode</code></td>
+<td>as 3</td>
+</tr>
+<tr>
+<td>4b</td>
+<td>Other parallaxes adopted by SIMBAD (bibcode recorded per row): Akeson et al. 2021 (alpha Cen AB, AJ 162, 14), Faherty et al. 2012 (ApJ 752, 56), Kirkpatrick et al. 2021 (ApJS 253, 7; Y dwarfs), Marsh et al. 2013, Tinney et al. 2014, Lazorenko &amp; Sahlmann 2018 (Luhman 16), Torres et al. 2010, Gaia DR2 (2018yCat.1345)</td>
+<td>various (USA/Europe)</td>
+<td>brown dwarfs, Luhman 16, close binaries</td>
+<td><code>astrometry_source</code> column</td>
+<td>as 3</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>RECONS</strong> "The 100 Nearest Star Systems" (list as of 2012-01-01)</td>
+<td>Research Consortium On Nearby Stars, Georgia State University, <strong>USA</strong></td>
+<td>Census of objects per system, used to cross-check and override multiplicity counts (38 systems matched by GJ number)</td>
+<td><code>http://www.recons.org/TOP100.posted.htm</code> (box could not reach the host; the same page was archived from <code>https://web.archive.org/web/2025id_/http://www.recons.org/TOP100.posted.htm</code>)</td>
+<td>2026-10-17</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Redfield &amp; Linsky (2008, ApJ 673, 283)</strong> LISM Kinematic Calculator, 15-cloud dynamical model of the Local ISM</td>
+<td>Seth Redfield, Wesleyan University, and Jeffrey Linsky, JILA / University of Colorado Boulder, <strong>USA</strong></td>
+<td>Which warm LISM clouds (LIC, G, Blue, Aql, ...) each sight line traverses or passes within 20 deg of</td>
+<td><code>http://lism.wesleyan.edu/cgi-bin/dynlism.cgi?coord=1&amp;glon=&lt;l&gt;&amp;glat=&lt;b&gt;</code>, one query per system primary: 44 systems in v1/v1.1, +54 in v1.2 (all 98 within 20 ly), +95 in v2 (all remaining 50-ly planet hosts and top-40 candidates). Empty responses were retried with l and/or b shifted by 0.01 deg (up to two retries); the shift is recorded in the <code>status</code> column. The box could not reach the host, so each response came back through the WebFetch tool and its "traverses/near" lines were written to <code>raw/lism_redfield_linsky2008.tsv</code></td>
+<td>2026-10-17 (all three batches)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Kopparapu et al. (2013, ApJ 765, 131)</strong>, corrected coefficients (arXiv:1301.6674v2, Table 3)</td>
+<td>Penn State / NASA, <strong>USA</strong></td>
+<td>Habitable-zone flux limits as a function of Teff</td>
+<td>coefficients in <code>pipeline/score.py</code> (<code>KOP</code>), checked against arXiv v2</td>
+<td>2026-10-17</td>
+</tr>
+<tr>
+<td>8a</td>
+<td>VizieR <code>J/ApJ/905/107/table1</code></td>
+<td>Medina, Irwin, Winters, Charbonneau 2020, ApJ 905, 107; Center for Astrophysics, Harvard &amp; Smithsonian, USA (TESS, NASA/MIT, USA; MEarth)</td>
+<td>TESS flare rates of mid-to-late M dwarfs within 15 pc (<code>Rate</code> = ln flares/day above the paper's energy limit; <code>Nflare</code>)</td>
+<td><code>https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=J/ApJ/905/107/table1&amp;-out.all&amp;-out.max=unlimited</code>, retrieved 2026-10-17T05:47:05Z</td>
+<td></td>
+</tr>
+<tr>
+<td>8b</td>
+<td>VizieR <code>J/MNRAS/431/2063/Mstars</code></td>
+<td>Stelzer, Marino, Micela, López-Santiago, Liefke 2013, MNRAS 431, 2063; INAF – Osservatorio Astronomico di Palermo, Italy (with Univ. Complutense Madrid, Spain; Hamburger Sternwarte, Germany)</td>
+<td>ROSAT/XMM X-ray fluxes of M dwarfs within 10 pc; log(Lx/Lbol) = <code>logFx − logFb</code></td>
+<td>same URL pattern, retrieved 2026-10-17T05:47:06Z</td>
+<td></td>
+</tr>
+<tr>
+<td>8c</td>
+<td>VizieR <code>J/A+A/417/651</code> (NEXXUS)</td>
+<td>Schmitt &amp; Liefke 2004, A&amp;A 417, 651; Hamburger Sternwarte, Univ. Hamburg, Germany (ROSAT: MPE, Germany)</td>
+<td>ROSAT X-ray luminosity log Lx for stars within 6 pc (all detections averaged per star; upper limits kept as limits). Converted to log(Lx/Lbol) with the NASA archive <code>st_lum</code>, so only possible for planet hosts</td>
+<td>retrieved 2026-10-17T05:47:07Z</td>
+<td></td>
+</tr>
+<tr>
+<td>8d</td>
+<td>VizieR <code>J/ApJ/743/48/catalog</code></td>
+<td>Wright, Drake, Mamajek, Henry 2011, ApJ 743, 48; Harvard-Smithsonian CfA, USA (with Univ. Rochester, USA; Georgia State Univ./RECONS, USA)</td>
+<td>log(Lx/Lbol) for 824 solar- and late-type stars</td>
+<td>retrieved 2026-10-17T05:47:09Z</td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Pythagoras Concept Design v2.4</strong> (§2.3, §4.7, App. P; <code>numbers_prototype.json</code>)</td>
+<td>MC²🍄 project document</td>
+<td>Ship flight profile for trip times</td>
+<td><code>/workspace/starship-design/</code></td>
+<td>file dated 2026-10-17</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Planet-discovery instruments.</strong> These are credited in each system's <code>sources</code> column and in <code>planets_v1.csv</code> (<code>facility_credit</code>, <code>reference</code>):
+- ESO La Silla HARPS (and NIRPS) and ESO Paranal VLT/ESPRESSO, Chile (ESO is intergovernmental, headquartered in Germany): Proxima b and d, Barnard b (ESPRESSO), GJ 1061, Ross 128, Lacaille 9352 (GJ 887), Luyten's star, YZ Ceti, GJ 674, Wolf 1061, GJ 3323, HD 20794 and others.
+- <strong>CARMENES</strong> at Calar Alto, Spain (CAHA, operated by CSIC Spain and MPIA Germany): Teegarden's Star b and c, HD 180617 b.
+- HARPS-N on the TNG, La Palma, Spain (INAF, Italy): GJ 15 A c.
+- SOPHIE at the Observatoire de Haute-Provence, France (CNRS): GJ 411 b.
+- MAROON-X on Gemini North (NSF NOIRLab, international partnership): Barnard c, d and e.
+- Keck/HIRES and Lick, USA; the Anglo-Australian Telescope, Australia.
+- "Multiple Observatories" means the archive credits several, often HARPS together with Keck, CARMENES and others.</p>
+<p><strong>Requested but not used in v1:</strong>
+- <strong>Subaru/IRD (NAOJ, Japan):</strong> no confirmed planet within 20 ly in <code>pscomppars</code> lists IRD as its discovery facility, so there was nothing to credit. IRD follow-up RV data are not in the composite table.
+- <strong>LAMOST (NAOC, China):</strong> not queried. Every star in this volume already has SIMBAD spectral types and Gaia/Hipparcos astrometry, and LAMOST avoids stars this bright. Worth adding for the 50 ly build, for spectral types and activity indicators of faint M dwarfs.
+- <strong>CARMENES and ESO archives:</strong> used only through the discoveries credited above. Their raw RV time series were not downloaded.</p>
+<h2>2. Pipeline</h2>
+<p><code>pipeline/activity.py</code> (new in v1.1) fetches catalogues 8a–8d (<code>raw/activity/*.tsv</code> + <code>*_meta.json</code>) and matches them by Gliese/GJ, HD, HIP or SIMBAD name against each star's SIMBAD identifiers. <code>run_all.py</code> runs it unless <code>--no-fetch</code>.
+ (re-runnable; extend to 50 ly by changing one parameter)</p>
+<p><code>pipeline/config.py      DMAX_LY (default 20), ranking WEIGHTS, ship profile
+pipeline/fetch.py       TAP queries above -&gt; raw/*.csv + raw/*_meta.json (query, endpoint, UTC time, row count)
+pipeline/merge.py       SIMBAD &lt;-&gt; Gaia DR3 (by Gaia DR3 id in SIMBAD identifiers); systems by union-find
+pipeline/score.py       planets -&gt; hosts, Kopparapu HZ, scores, trip times -&gt; starmap_{VERSION}.csv, planets_{VERSION}.csv, build_meta_{VERSION}.json (VERSION = "v1.1" in config.py)
+pipeline/render_html.py self-contained three.js map -&gt; starmap_{VERSION}.html
+pipeline/run_all.py     runs everything + headless-Chrome PNG snapshot</code>
+Builds: <code>STARMAP_VERSION=v1.2 .venv/bin/python pipeline/run_all.py --no-fetch</code> (20 ly) and <code>STARMAP_DMAX_LY=50 STARMAP_VERSION=v2 .venv/bin/python pipeline/run_all.py --no-fetch</code> (50 ly). Parallax cuts use a 3% margin; the NASA archive cut uses a 1.5× margin (<code>NASA_MARGIN</code>), because planets are placed by the host's Gaia/SIMBAD astrometry, not the archive's <code>sy_dist</code>. Raw TAP caches for 20 ly are in <code>raw/</code>, for 50 ly in <code>raw/scope_50ly/</code>; the activity catalogues (<code>raw/activity/</code>), RECONS and LISM files are shared. Sight lines not in <code>raw/lism_redfield_linsky2008.tsv</code> read "unknown".</p>
+<h2>3. Cross-match and system merge</h2>
+<ul>
+<li><strong>Astrometry priority.</strong> Gaia DR3 when the SIMBAD object carries a Gaia DR3 id. Otherwise the parallax SIMBAD adopts, with its bibcode recorded: Hipparcos (ESA) for bright stars, plus the literature values listed in source 4b.</li>
+<li><strong>Gaia match.</strong> All 100 Gaia DR3 sources with parallax &gt; 158.33 mas matched a SIMBAD object, so there are no Gaia-only sources (<code>gaia_unmatched_sources.csv</code> is empty).</li>
+<li><strong>Planet hosts.</strong> Matched by <code>gaia_dr3_id</code>, falling back to the nearest SIMBAD object within 10′ (needed for GJ 411 and GJ 273).</li>
+<li><strong>System grouping</strong> merges objects that are:</li>
+<li>linked in the SIMBAD hierarchy (membership ≥ 50% or unspecified), or</li>
+<li>within 0.1 pc projected with distances consistent to 3σ (minimum 0.05 pc), or</li>
+<li>within 0.02 pc projected with Δd &lt; 0.2 pc. This catches tight pairs whose parallaxes disagree because of orbital motion or poor astrometry, e.g. Wolf 424 AB, eps Ind B, SCR 1845 B.</li>
+<li><strong>Component counts.</strong> RECONS counts override where they match. Otherwise, SIMBAD system-level entries such as "alf Cen" or "70 Oph" are not counted as bodies, and a lone unresolved <code>**</code>/<code>SB*</code> entry counts as two.</li>
+<li><strong>System distance</strong> is the primary's (brightest member) distance. Trip times use the <strong>destination component</strong>: the host of the best-scoring planet, else the primary. For alpha Centauri that is Proxima at 4.246 ly; the trip to A/B is given separately (<code>trip_*_to_primary</code>).</li>
+<li><strong>Galactic XYZ</strong> (light-years, heliocentric) come from the astropy ICRS→Galactic transform: X toward the Galactic Centre, Y toward l = 90°, Z toward the North Galactic Pole.</li>
+<li><strong>Distance error</strong> = d × σ_plx / plx.</li>
+</ul>
+<h2>4. Ranking (first pass; weights are user-set and live in <code>config.py</code>)</h2>
+<p><code>score_equal_weight = w_d·score_distance + w_h·score_habitability + w_r·score_route</code>, with <strong>w_d = w_h = w_r = 1/3</strong> (user decision 2026-10-17: balanced mix).</p>
+<p><strong>No-planet gate (new in v1.1, user decision 2026-10-17):</strong> <code>score_total = score_equal_weight</code> for systems with ≥1 confirmed planet; <code>score_total = NO_PLANET_FACTOR × score_equal_weight</code> with <code>NO_PLANET_FACTOR = 0.5</code> (in <code>pipeline/config.py</code>) for systems with no confirmed planet. Reason: a nearby system with a clean route but no known planet (e.g. Luhman 16, v1 rank 8, score 0.53) should not outrank systems with known HZ planets. With 0.5, the best no-planet system (Luhman 16, 0.26) ranks 29th, below every planet host. CSV columns: <code>score_equal_weight</code>, <code>no_planet_gate_applied</code>, <code>score_total</code>. Set the factor to 1.0 to get the v1 ranking back.</p>
+<p><strong>Distance:</strong> <code>1 − d_dest / DMAX_LY</code>, linear (20-ly build: Proxima 0.79, 20 ly → 0; 50-ly build: Proxima 0.92, 50 ly → 0). Because the scale depends on DMAX, <strong>v1.x and v2 scores are not comparable</strong>; in v2 distance differences matter less, so habitability and route weigh relatively more.</p>
+<p><strong>Habitability:</strong> the best planet's score, <code>HZ × size × confirmation × host type × activity</code>. Systems with no known planet score 0. That means no data, not proof there are no planets.
+- <strong>HZ, using the planet's insolation S</strong> (archive <code>pl_insol</code>, else L/a²), compared with the Kopparapu 2013 limits at the host Teff:
+  - conservative (moist greenhouse to maximum greenhouse) = 1.0
+  - optimistic (recent Venus to early Mars) = 0.75
+  - "near" (within 25% in flux outside the optimistic limits) = 0.35
+  - outside = 0
+- <strong>Size</strong> (from mass or M sin i; radii in <code>pscomppars</code> for RV planets are mass-radius estimates, not measurements): ≤2 M⊕ 1.0; 2–5 M⊕ 0.8; 5–10 M⊕ 0.4; &gt;10 M⊕ 0.05.
+- <strong>Confirmation:</strong> NASA <code>pl_controv_flag</code> = 1 gives × 0.5.
+- <strong>Host type</strong> (heuristic for tidal locking and pre-main-sequence water loss): G/K 1.0; F 0.9; M0–M2.5 0.85; M3–M4.5 0.75; M5+ 0.65; A/white dwarf/brown dwarf 0.4.
+- <strong>Activity</strong> (flare hazard), weights: low 1.0; unknown 0.85; moderate 0.8; high 0.6. Levels come <strong>from fetched catalogues first</strong> (rows 8a–8d, code in <code>pipeline/activity.py</code>):
+  - TESS flare rate R (flares/day, Medina+2020): high if R ≥ 0.1, moderate if 0.01 ≤ R &lt; 0.1, low if R &lt; 0.01.
+  - log(Lx/Lbol) (Stelzer+2013, Wright+2011, NEXXUS + archive L*): high if ≥ −3.5 (near saturation); moderate −5.0 to −3.5; low &lt; −5.0 (Sun ≈ −6 to −7). An upper limit counts only if it is below −5.0 (then low).
+  - If several indicators exist, the <strong>most severe</strong> one sets the level; all values and citations are listed in <code>host_activity_note</code> and <code>host_activity_source</code>.
+  - Fallback only when no catalogue value exists: SIMBAD object types, labelled <code>high (coarse)</code> (<code>Er*</code>/<code>Fl*</code>) or <code>moderate (coarse)</code> (<code>BY*</code>/<code>RS*</code>/<code>Ro*</code>). Otherwise <code>unknown</code>. "Unknown" means no data, not a quiet star.
+  - These thresholds are heuristic bins chosen for this map, not values from the papers.</p>
+<p><strong>Route:</strong> from the Redfield &amp; Linsky 2008 sight-line result. Start at 1.0, then:
+- −0.30 if no warm cloud lies on the sight line. The route would then be mainly hot Local Bubble gas, so the magsail would likely see far less plasma than the n_i = 0.1 cm⁻³ the design assumes.
+- −0.10 for each cloud traversed beyond the first. Each boundary changes density and flow vector, which affects magsail drag and cross-track forces (design doc §3.2).
+- −0.03 for each cloud passing within 20° (edge uncertainty), capped at −0.15.</p>
+<p>Sight lines not queried get <strong><code>score_route</code> = blank / unknown</strong>; only for them the composite uses the median of the queried sight lines (0.88) and sets <code>route_score_imputed = True</code>. <strong>v1.2: 0 of 98 imputed</strong> (v1.1: 54). <strong>v2: 1074 of 1267 imputed</strong>, all without known planets and all ranked ≥182, so no planet host or top-181 system uses the fallback.</p>
+<p>Distance-driven dust and proton fluence is deliberately left out of the route score so distance isn't counted twice.</p>
+<h2>5. Trip times (Pythagoras Concept Design v2.4 §4.7, 20 kt ship, propellant carried)</h2>
+<ul>
+<li><strong>Profile:</strong> laser boost at 0.1 g (2.924 yr Earth / 2.894 yr crew, 0.367 ly) → coast at 0.23c (γ = 1.02755) → trailing-magsail brake to 0.02c (22.517 yr, 2.452 ly) → flip → D-³He fusion brake at 0.01 g (1.938 yr, 0.019 ly).</li>
+<li><strong>Fixed part:</strong> the non-cruise phases take 27.378 yr Earth / 27.165 yr crew over 2.839 ly.</li>
+<li><strong>Formula:</strong> <code>t_Earth = 27.378 + (D − 2.839)/0.23</code> and <code>t_crew = 27.165 + (D − 2.839)/(0.23 γ)</code>. The crew time of the magsail phase (22.333 yr) is derived from the doc's crew total.</li>
+<li><strong>Check:</strong> at the doc's D = 4.24 ly this gives <strong>33.47 / 33.09 yr</strong>, matching the doc's 33.5 / 33.1 yr.</li>
+<li><strong>Alpha Centauri mismatch:</strong> the doc's 33.5 yr uses D = 4.24 ly, i.e. <strong>Proxima Centauri</strong>. Gaia DR3 puts Proxima at 4.2465 ly (33.50 yr), while alpha Cen A/B are at 4.344 ly (Akeson et al. 2021 parallax) → <strong>33.92 yr Earth / 33.53 yr crew</strong>.</li>
+<li><strong>Coast-only times</strong> (D/0.23c, no acceleration phases) are also in the CSV for comparison.</li>
+<li><strong>Assumptions:</strong> the magsail phase uses the same ISM density everywhere (the doc's n_i = 0.1 cm⁻³). The +4.9 kt neutron face (doc: 35.9 yr) is excluded.</li>
+</ul>
+<h2>6. Known limitations and uncertainties</h2>
+<ul>
+<li><strong>Completeness:</strong> the volume is limited to objects with a SIMBAD parallax &gt; 158 mas. Undiscovered cold brown dwarfs and any object without a SIMBAD parallax are missing.</li>
+<li><strong>Questionable members:</strong> four brown dwarfs/binaries have parallax errors &gt; 5% (HD 101847BC: ±20%; 2MASS J0254+0223: ±23%), so whether they belong inside 20 ly is uncertain.</li>
+<li><strong>Planets are almost all radial-velocity detections:</strong> masses are minimum masses, radii are estimated, and nothing is known about atmospheres or habitability.</li>
+<li><strong>Disputed or retracted planets:</strong></li>
+<li>Barnard's star: the 2018 super-Earth (Ribas et al.) was later refuted. The current Barnard b–e (2024–2025, ESPRESSO and MAROON-X) are all too hot for the HZ.</li>
+<li>Proxima d: first reported with ESPRESSO (Faria et al. 2022) and listed as confirmed; the archive's current reference is Suárez Mascareño et al. 2025 (La Silla). It is a very low-amplitude signal.</li>
+<li>Proxima c: a SIMBAD candidate only, not in the NASA confirmed table.</li>
+<li>alpha Cen Ab: a JWST candidate, unconfirmed.</li>
+<li>Flagged controversial by the NASA archive: tau Ceti f/g/h, GJ 15 A b, Kapteyn c, the GJ 229 planets, HD 20794 e.</li>
+<li>SIMBAD <code>Pl?</code> objects not in the NASA table are listed in <code>candidate_planets_unconfirmed</code> and never scored.</li>
+<li><strong>LISM:</strong> the Redfield &amp; Linsky calculator gives projected cloud morphology only, not distances to cloud boundaries. A traversed cloud may lie beyond a target, and the model is built from absorption toward stars within ~15 pc. The Sun is at the LIC/G-cloud transition.</li>
+<li><strong>Dust and radiation:</strong> no direction-dependent interstellar dust data at the scale of these routes was found. Dust hazard is <strong>unknown</strong> beyond the design doc's LIC-average estimates (§2.7: 25.8 MeV ISM protons at 0.23c; dust impacts dominate erosion).</li>
+<li><strong>Activity:</strong> catalogue values exist for 27 of 28 planet hosts (Teegarden's Star has none in these catalogues → <code>unknown</code>). The 14 remaining <code>(coarse)</code> flags are all on systems with no known planet, so they do not change any score. Bins are heuristic; X-ray data are mostly ROSAT-era (1990s) and activity varies with cycles; Medina flare rates count flares above a fixed energy, so they are not scaled to each star's luminosity (Proxima's rate 0.089/day falls just under the "high" bin, and its NEXXUS log(Lx/Lbol) −3.51 sits right at the boundary). ROSAT survey sources can blend close pairs (e.g. GJ 15 A/B share one survey count rate).</li>
+<li><strong>RECONS:</strong> the 2012 list was used only to check multiplicity. Its parallaxes were not used (Gaia DR3 supersedes them).</li>
+<li><strong>v2 activity coverage:</strong> catalogue values exist for 67 of 123 planet hosts; 5 more have SIMBAD-only <code>(coarse)</code> flags and 51 are <code>unknown</code> (weight 0.85). The catalogues are volume-limited (NEXXUS 6 pc, Stelzer 10 pc, Medina 15 pc M dwarfs, Wright 2011 a selection), so beyond 20 ly "unknown" is common, e.g. GJ 667 C, Wolf 1069, GJ 3378. Over all 1267 systems: 840 unknown.</li>
+<li><strong>v2 completeness:</strong> limited to SIMBAD parallaxes &gt; 63.33 mas. The 15 pc census is less complete for cold brown dwarfs and faint companions than the 20 ly one; 44 systems have parallax errors &gt; 5%.</li>
+<li><strong>Archive distances:</strong> the NASA archive's <code>sy_dist</code> can be wrong (Gl 725 B: 6.84 pc in the archive vs ≈3.5 pc in Gaia DR3), which is why v1.2 widened the archive cut. A planet whose archive distance is more than 1.5× its true distance would still be missed.</li>
+<li><strong>LISM beyond 15 pc:</strong> the Redfield &amp; Linsky model was built from sight lines mostly within ~15 pc, so for 30–50 ly targets the cloud list is an extrapolation of projected morphology.</li>
+<li><strong>Map readability (v2):</strong> only the top 10 are labelled by default; the HTML has a distance slider and planet-host / HZ filters plus label toggles. The PNG is a fixed snapshot at 50 ly with all systems shown, so it is crowded.</li>
+<li><strong>Map overlap:</strong> labels near the Sun overlap in the PNG; the interactive map resolves this.</li>
+</ul>
+<h2>7. Changelog v1 → v1.1 (2026-10-17)</h2>
+<p><strong>Six hand-written activity notes removed and replaced by catalogue values:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Star</th>
+<th>v1 (hand-written)</th>
+<th>v1.1</th>
+<th>Source values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proxima Centauri</td>
+<td>high</td>
+<td><strong>moderate</strong> (top of bin)</td>
+<td>TESS 0.089 flares/day, 134 flares (Medina+2020); log(Lx/Lbol) −3.81 (Wright+2011), −3.51 (NEXXUS + archive L*)</td>
+</tr>
+<tr>
+<td>Barnard's star</td>
+<td>moderate</td>
+<td><strong>low</strong></td>
+<td>NEXXUS log Lx 25.80 → log(Lx/Lbol) −5.34</td>
+</tr>
+<tr>
+<td>Teegarden's Star</td>
+<td>low</td>
+<td><strong>unknown</strong></td>
+<td>not in any of the four catalogues</td>
+</tr>
+<tr>
+<td>Ross 128</td>
+<td>low</td>
+<td><strong>moderate</strong></td>
+<td>log(Lx/Lbol) −4.31 (Stelzer+2013); −4.43 (NEXXUS)</td>
+</tr>
+<tr>
+<td>Lacaille 9352 (GJ 887)</td>
+<td>low</td>
+<td><strong>low</strong> (now cited)</td>
+<td>NEXXUS log Lx 27.13 → log(Lx/Lbol) −5.01</td>
+</tr>
+<tr>
+<td>GJ 1061</td>
+<td>low</td>
+<td><strong>moderate</strong></td>
+<td>TESS 0 flares, rate ~6e−6/day (Medina+2020, low) but NEXXUS log(Lx/Lbol) −4.74 (moderate); most severe kept</td>
+</tr>
+</tbody>
+</table>
+<p>Other planet hosts also moved from SIMBAD-type or unknown flags to catalogue values. Examples: Luyten's star, GJ 251, eps Ind, e Eri, GJ 832 → low; GJ 682, GJ 674, GJ 687, GJ 725 A → moderate; GJ 411, GJ 229, GJ 752, GJ 83.1, GJ 3323 high (SIMBAD) → moderate; tau Ceti and Kapteyn's moderate → low; YZ Cet stays high (TESS 0.247/day). Overall counts: v1 high 31 / moderate 15 / low 4 / unknown 48. v1.1 high 7 / moderate 25 / low 20 / unknown 32, plus <code>(coarse)</code> SIMBAD-only flags: 10 high and 4 moderate.</p>
+<p><strong>No-planet gate</strong> added (section 4). Weights are unchanged.</p>
+<h2>8. Changelog v1.1 → v1.2 (2026-10-17, ≤20 ly)</h2>
+<ul>
+<li><strong>LISM:</strong> the 54 remaining sight lines within 20 ly were looked up with the Redfield &amp; Linsky calculator (8 needed one retry, 1 needed two, all with l/b shifted 0.01 deg; no failures). The median route fallback is now used for <strong>no</strong> 20-ly system (<code>route_score_imputed</code> all False). Rows are in <code>raw/lism_redfield_linsky2008.tsv</code> after the <code># v1.2</code> line (pre-v1.2 copy: <code>raw/lism_redfield_linsky2008_v1.tsv</code>). All 54 are systems without known planets, so this moved only no-planet ranks (e.g. SCR 1845 41→38, Wolf 424 48→40).</li>
+<li><strong>Missing planet fixed:</strong> Gl 725 B c (conservative HZ) was absent in v1/v1.1 because the archive lists its <code>sy_dist</code> as 6.84 pc (Gaia DR3 ≈ 3.5 pc), beyond the old 1.03× cut. The NASA cut now uses a 1.5× margin (<code>NASA_MARGIN</code>; old raw copy <code>raw/nasa_pscomppars_v1-v1.1.csv</code>). 60 → 61 planets; no other planet was missing.</li>
+<li><strong>Top-8 change:</strong> HD 173739 / GJ 725 A enters at <strong>#2</strong> (score 0.605, Gl 725 B c, moderate activity, LIC; 65.0 yr Earth / 63.8 yr crew). Teegarden's Star, Ross 128, Lacaille 9352, Luyten's star, GJ 1061 and GJ 682 each move down one place (#3–#8); <strong>GJ 251 drops from #8 to #9</strong>. alf Cen stays #1.</li>
+<li><code>sys_id</code> column added; HTML gained the filter UI described above. Old <code>raw/activity/J_*.tsv</code> leftovers deleted.</li>
+</ul>
+<h2>9. v2 (2026-10-17, ≤50 ly)</h2>
+<ul>
+<li>Same code, weights (1/3 each) and <code>NO_PLANET_FACTOR = 0.5</code>; same four activity catalogues; scope 50 ly.</li>
+<li><strong>LISM prioritisation:</strong> sight lines were queried for all 123 planet hosts plus the top-40 provisional candidates (95 new queries beyond the 98 from v1.2). 21 of the 95 needed retries (16 once, 5 twice, each with l/b shifted 0.01 deg); none failed after retries. New rows follow the <code># v2</code> line in <code>raw/lism_redfield_linsky2008.tsv</code> (also <code>raw/lism_v2_new.tsv</code>).</li>
+<li><strong>HTML:</strong> top 10 labelled; distance slider ("Show systems out to N ly"), "planet hosts only", "HZ planet hosts only", "label all planet hosts", "label all visible systems"; rings every 10 ly.</li>
+</ul>
+<hr />
+<h1>v3 findings log — sources and counts</h1>
+<p>v3 adds <code>findings_v3.csv/json</code> (55781 findings, long format), <code>SYSTEM_PROFILES_v3.md</code>, <code>starmap_v3.{csv,html,png}</code>. Older versions (v1, v1.1, v1.2, v2) are unchanged; the pre-v3 version of this file is kept as <code>SOURCES_v2.md</code>.
+<strong>Rule followed: every finding is generated by code from a file fetched in this build (raw/findings/…); nothing was typed in from memory.</strong> The only hand-written inputs are (a) the curated status list <code>pipeline/findings/curated_status.json</code>, whose every quote is machine-verified against a fetched abstract (rows whose quote is not found are rejected; 0 rejected), (b) the facility→operator/country map <code>pipeline/findings/facilities.py</code> (ASSUMPTION: operator/host country of the facility, not author affiliation), and (c) arXiv search terms (system names).</p>
+<h2>Fetched inputs</h2>
+<table>
+<thead>
+<tr>
+<th>file</th>
+<th>service</th>
+<th>rows</th>
+<th>retrieved (UTC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>raw/findings/gaia_ap.csv</td>
+<td>https://gea.esac.esa.int/tap-server/tap/sync</td>
+<td>1249</td>
+<td>2026-10-19T23:34:35+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/gaia_nss_accel.csv</td>
+<td>https://gea.esac.esa.int/tap-server/tap/sync</td>
+<td>1</td>
+<td>2026-10-19T23:37:42+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/gaia_nss.csv</td>
+<td>https://gea.esac.esa.int/tap-server/tap/sync</td>
+<td>9</td>
+<td>2026-10-19T23:37:40+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/nasa_ps.csv</td>
+<td>https://exoplanetarchive.ipac.caltech.edu/TAP/sync</td>
+<td>1265</td>
+<td>2026-10-19T23:48:09+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/nasa_spectra.csv</td>
+<td>https://exoplanetarchive.ipac.caltech.edu/TAP/sync</td>
+<td>1875</td>
+<td>2026-10-19T23:34:31+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/nasa_stellarhosts.csv</td>
+<td>https://exoplanetarchive.ipac.caltech.edu/TAP/sync</td>
+<td>2581</td>
+<td>2026-10-19T23:48:11+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_diam.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>134</td>
+<td>2026-10-19T23:36:47+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_fe_h.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>16134</td>
+<td>2026-10-19T23:36:43+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_refs_A.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>10723</td>
+<td>2026-10-19T23:37:08+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_refs_BC.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>9368</td>
+<td>2026-10-19T23:37:24+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_rot.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>3665</td>
+<td>2026-10-19T23:36:45+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/simbad_var.csv</td>
+<td>https://simbad.cds.unistra.fr/simbad/sim-tap/sync</td>
+<td>1150</td>
+<td>2026-10-19T23:36:46+00:00</td>
+</tr>
+<tr>
+<td>raw/findings/wds_xmatch.csv</td>
+<td>CDS XMatch vs VizieR B/wds/wds (20″)</td>
+<td>1109</td>
+<td>see wds_xmatch_meta.json</td>
+</tr>
+<tr>
+<td>raw/findings/arxiv/arxiv_tierA.json</td>
+<td>arXiv API (export.arxiv.org), ≤40 newest per tier-A system</td>
+<td>376 entries</td>
+<td>see file</td>
+</tr>
+<tr>
+<td>raw/findings/vizier/*.tsv (+ ReadMe)</td>
+<td>VizieR asu-tsv full catalogues: J/A+A/555/A11 (DUNES, Eiroa+2013), J/A+A/593/A51 (Montesinos+2016), J/ApJS/211/25 (Chen+2014 Spitzer IRS), J/PASP/129/E4501 (Isaacson+2017 Breakthrough Listen targets), J/A+A/614/A76 (Jeffers+2018), J/A+A/625/A68 (Schweitzer+2019), J/A+A/662/A41 (Reiners+2022), J/ApJ/687/1264 (Mamajek &amp; Hillenbrand 2008), J/ApJ/746/101 &amp; J/ApJ/757/112 (Boyajian+2012), J/ApJ/804/64 (Mann+2015), J/ApJ/821/93 (Newton+2016)</td>
+<td>—</td>
+<td>2026-10</td>
+</tr>
+</tbody>
+</table>
+<h2>Method</h2>
+<ul>
+<li>Targets (<code>raw/findings/targets_v3.csv</code>): tier A = v2 top 20 ∪ every planet host ≤20 ly (33 systems); B = other ≤20 ly systems; C/D = 20–50 ly planet hosts / others. Coverage: tier A: 33/33 systems, 6356 findings, tier B: 65/70 systems, 5960 findings, tier C: 89/90 systems, 11960 findings, tier D: 924/1074 systems, 31505 findings.</li>
+<li>Matching: catalogue name columns vs the full SIMBAD alias index, then HIP, then position (≤15″, method recorded in <code>match_method</code>); NASA hosts by alias; Gaia by DR3 source_id; SIMBAD by oid.</li>
+<li>Literature: SIMBAD bibliography (papers indexing ≤50 objects for tier A, ≤10 for B/C) with abstracts, plus arXiv. A paper is kept only if its title/abstract names the system (or it indexes ≤3 objects; then no status is inferred). Kept 5345 paper-system rows (dropped 14153 that did not name the target, 939 unclassifiable). Category and status are <strong>keyword heuristics</strong> (<code>status_basis</code> column) — refute/rule-out/false-positive → refuted, dispute/challenge/doubt → disputed, non-detection/upper-limit → non-detection, confirm → confirmed, else reported. Statuses only fire when the triggering sentence names the target. Treat literature statuses as leads, not verdicts; the curated rows are the reviewed verdicts.</li>
+<li>Status vocabulary: confirmed / disputed / refuted plus three labelled additions: candidate (archive 'Published Candidate' or authors' own wording), non-detection (null result / upper limit), reported (a measurement or paper with no confirm/dispute signal).</li>
+</ul>
+<h2>Findings by data service</h2>
+<table>
+<thead>
+<tr>
+<th>item</th>
+<th>findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIMBAD mes</td>
+<td>38033</td>
+</tr>
+<tr>
+<td>SIMBAD bibliography</td>
+<td>4431</td>
+</tr>
+<tr>
+<td>NASA Exoplanet Archive</td>
+<td>4100</td>
+</tr>
+<tr>
+<td>Gaia DR3</td>
+<td>3852</td>
+</tr>
+<tr>
+<td>VizieR</td>
+<td>3825</td>
+</tr>
+<tr>
+<td>WDS</td>
+<td>1109</td>
+</tr>
+<tr>
+<td>v1.2 activity</td>
+<td>243</td>
+</tr>
+<tr>
+<td>arXiv</td>
+<td>157</td>
+</tr>
+<tr>
+<td>curated</td>
+<td>31</td>
+</tr>
+</tbody>
+</table>
+<h2>Findings by status</h2>
+<table>
+<thead>
+<tr>
+<th>item</th>
+<th>findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>reported</td>
+<td>54227</td>
+</tr>
+<tr>
+<td>confirmed</td>
+<td>1095</td>
+</tr>
+<tr>
+<td>non-detection</td>
+<td>314</td>
+</tr>
+<tr>
+<td>disputed</td>
+<td>79</td>
+</tr>
+<tr>
+<td>candidate</td>
+<td>38</td>
+</tr>
+<tr>
+<td>refuted</td>
+<td>28</td>
+</tr>
+</tbody>
+</table>
+<h2>Findings by category</h2>
+<table>
+<thead>
+<tr>
+<th>item</th>
+<th>findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>stellar parameters</td>
+<td>47145</td>
+</tr>
+<tr>
+<td>activity</td>
+<td>2761</td>
+</tr>
+<tr>
+<td>planets</td>
+<td>2404</td>
+</tr>
+<tr>
+<td>companions and multiplicity</td>
+<td>1563</td>
+</tr>
+<tr>
+<td>planet characterization</td>
+<td>1031</td>
+</tr>
+<tr>
+<td>radio and technosignature searches</td>
+<td>463</td>
+</tr>
+<tr>
+<td>debris disks and dust</td>
+<td>323</td>
+</tr>
+<tr>
+<td>astrosphere and stellar wind</td>
+<td>72</td>
+</tr>
+<tr>
+<td>notable mission targets</td>
+<td>19</td>
+</tr>
+</tbody>
+</table>
+<h2>Findings by facility / observatory (where attributable; a finding can count for several)</h2>
+<table>
+<thead>
+<tr>
+<th>item</th>
+<th>findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gaia (BP/RP, RVS)</td>
+<td>3425</td>
+</tr>
+<tr>
+<td>CARMENES (Calar Alto 3.5m)</td>
+<td>1107</td>
+</tr>
+<tr>
+<td>CAFE/FEROS/HRS (CARMENES consortium)</td>
+<td>491</td>
+</tr>
+<tr>
+<td>Breakthrough Listen (GBT / Parkes / APF)</td>
+<td>421</td>
+</tr>
+<tr>
+<td>Gaia RVS</td>
+<td>417</td>
+</tr>
+<tr>
+<td>JWST</td>
+<td>253</td>
+</tr>
+<tr>
+<td>HST</td>
+<td>210</td>
+</tr>
+<tr>
+<td>HARPS (ESO 3.6m)</td>
+<td>206</td>
+</tr>
+<tr>
+<td>Kepler/K2</td>
+<td>197</td>
+</tr>
+<tr>
+<td>MEarth</td>
+<td>180</td>
+</tr>
+<tr>
+<td>CHARA Array</td>
+<td>157</td>
+</tr>
+<tr>
+<td>VLT</td>
+<td>154</td>
+</tr>
+<tr>
+<td>TESS</td>
+<td>115</td>
+</tr>
+<tr>
+<td>Herschel/PACS</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Keck</td>
+<td>93</td>
+</tr>
+<tr>
+<td>CFHT</td>
+<td>90</td>
+</tr>
+<tr>
+<td>Spitzer</td>
+<td>83</td>
+</tr>
+<tr>
+<td>Chandra</td>
+<td>78</td>
+</tr>
+<tr>
+<td>Gaia</td>
+<td>69</td>
+</tr>
+<tr>
+<td>XMM-Newton</td>
+<td>68</td>
+</tr>
+<tr>
+<td>CARMENES (Calar Alto)</td>
+<td>68</td>
+</tr>
+<tr>
+<td>FundStP</td>
+<td>57</td>
+</tr>
+<tr>
+<td>ESPRESSO (VLT)</td>
+<td>53</td>
+</tr>
+<tr>
+<td>HARPS Spectrograph</td>
+<td>51</td>
+</tr>
+<tr>
+<td>HARPS-N (TNG)</td>
+<td>45</td>
+</tr>
+<tr>
+<td>Hipparcos</td>
+<td>41</td>
+</tr>
+<tr>
+<td>Interfer</td>
+<td>38</td>
+</tr>
+<tr>
+<td>VLA/VLBA</td>
+<td>34</td>
+</tr>
+<tr>
+<td>ALMA</td>
+<td>34</td>
+</tr>
+<tr>
+<td>ROSAT</td>
+<td>32</td>
+</tr>
+<tr>
+<td>WISE</td>
+<td>32</td>
+</tr>
+<tr>
+<td>Wide Field Camera 3 (HST)</td>
+<td>31</td>
+</tr>
+<tr>
+<td>Near Infrared Camera (NIRCam) (JWST)</td>
+<td>29</td>
+</tr>
+<tr>
+<td>VLTI</td>
+<td>28</td>
+</tr>
+<tr>
+<td>Gemini</td>
+<td>28</td>
+</tr>
+<tr>
+<td>ESO La Silla</td>
+<td>27</td>
+</tr>
+<tr>
+<td>Lick/APF</td>
+<td>27</td>
+</tr>
+<tr>
+<td>Magellan</td>
+<td>25</td>
+</tr>
+<tr>
+<td>Near Infrared Spectrograph (NIRSpec) (JWST)</td>
+<td>24</td>
+</tr>
+<tr>
+<td>La Palma (ING/TNG)</td>
+<td>22</td>
+</tr>
+<tr>
+<td>Subaru</td>
+<td>20</td>
+</tr>
+<tr>
+<td>nan</td>
+<td>20</td>
+</tr>
+<tr>
+<td>CARMENES</td>
+<td>17</td>
+</tr>
+<tr>
+<td>Herschel</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Herschel/PACS 70/100/160 um</td>
+<td>16</td>
+</tr>
+<tr>
+<td>SOPHIE (OHP)</td>
+<td>15</td>
+</tr>
+<tr>
+<td>HIRES Spectrometer</td>
+<td>15</td>
+</tr>
+<tr>
+<td>Mid-Infrared Instrument (MIRI) (JWST)</td>
+<td>13</td>
+</tr>
+<tr>
+<td>Near Infrared Spectrograph (NIRSpec) - G395H (JWST)</td>
+<td>13</td>
+</tr>
+<tr>
+<td>AAT</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+<h2>Findings by operating agency / institution</h2>
+<table>
+<thead>
+<tr>
+<th>item</th>
+<th>findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ESA / Gaia DPAC</td>
+<td>3852</td>
+</tr>
+<tr>
+<td>CAHA (MPIA/CSIC)</td>
+<td>1192</td>
+</tr>
+<tr>
+<td>USNO (WDS)</td>
+<td>1109</td>
+</tr>
+<tr>
+<td>CARMENES consortium (CAHA)</td>
+<td>860</td>
+</tr>
+<tr>
+<td>ESO</td>
+<td>592</td>
+</tr>
+<tr>
+<td>Breakthrough Initiatives / UC Berkeley SETI Research Center</td>
+<td>421</td>
+</tr>
+<tr>
+<td>NASA/ESA/CSA</td>
+<td>363</td>
+</tr>
+<tr>
+<td>NASA/ESA</td>
+<td>245</td>
+</tr>
+<tr>
+<td>NASA</td>
+<td>210</td>
+</tr>
+<tr>
+<td>ESA</td>
+<td>196</td>
+</tr>
+<tr>
+<td>Harvard CfA</td>
+<td>183</td>
+</tr>
+<tr>
+<td>Georgia State Univ.</td>
+<td>157</td>
+</tr>
+<tr>
+<td>NASA/MIT</td>
+<td>135</td>
+</tr>
+<tr>
+<td>ESA (Herschel)</td>
+<td>116</td>
+</tr>
+<tr>
+<td>W. M. Keck Observatory</td>
+<td>108</td>
+</tr>
+<tr>
+<td>CFHT Corp. (Canada/France/Hawaii)</td>
+<td>99</td>
+</tr>
+<tr>
+<td>NASA/JPL-Caltech</td>
+<td>98</td>
+</tr>
+<tr>
+<td>NASA/SAO</td>
+<td>78</td>
+</tr>
+<tr>
+<td>DUNES team</td>
+<td>76</td>
+</tr>
+<tr>
+<td>Multiple Observatories</td>
+<td>66</td>
+</tr>
+<tr>
+<td>INAF</td>
+<td>52</td>
+</tr>
+<tr>
+<td>NOIRLab/NSF</td>
+<td>44</td>
+</tr>
+<tr>
+<td>NRAO (NSF)</td>
+<td>34</td>
+</tr>
+<tr>
+<td>ESO/NAOJ/NRAO (JAO)</td>
+<td>34</td>
+</tr>
+<tr>
+<td>UC Observatories</td>
+<td>34</td>
+</tr>
+<tr>
+<td>DLR/MPE</td>
+<td>32</td>
+</tr>
+<tr>
+<td>NASA/JPL</td>
+<td>32</td>
+</tr>
+<tr>
+<td>ING/INAF</td>
+<td>31</td>
+</tr>
+<tr>
+<td>Carnegie</td>
+<td>28</td>
+</tr>
+<tr>
+<td>NAOJ</td>
+<td>21</td>
+</tr>
+<tr>
+<td>NAOC/CAS</td>
+<td>20</td>
+</tr>
+<tr>
+<td>CNRS</td>
+<td>18</td>
+</tr>
+<tr>
+<td>CSIRO</td>
+<td>16</td>
+</tr>
+<tr>
+<td>AAO</td>
+<td>13</td>
+</tr>
+<tr>
+<td>ESA/Switzerland</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ASTRON</td>
+<td>9</td>
+</tr>
+<tr>
+<td>NRAO/GBO (NSF)</td>
+<td>9</td>
+</tr>
+<tr>
+<td>Breakthrough Initiatives / UC Berkeley</td>
+<td>9</td>
+</tr>
+<tr>
+<td>ESO/Canada</td>
+<td>8</td>
+</tr>
+<tr>
+<td>IAC</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<h2>Findings by country / region of the operating facility (split on '/', a finding can count for several)</h2>
+<p>9717 findings carry a facility country; 46064 do not (SIMBAD measurement compilations and papers whose abstract names no facility).
+| item | findings |
+|---|---|
+| Europe | 5425 |
+| USA | 3462 |
+| Spain | 2143 |
+| Germany | 2090 |
+| Chile | 674 |
+| Canada | 476 |
+| France | 117 |
+| Italy | 83 |
+| Japan | 56 |
+| Netherlands | 45 |
+| UK | 39 |
+| Australia | 32 |
+| International | 32 |
+| China | 23 |
+| USA (Puerto Rico) | 5 |
+| Russia | 3 |
+| South Africa | 3 |
+| East Asia | 3 |</p>
+<h2>Ranking re-check</h2>
+<p>The unchanged v2 scorer was rerun on the cached v2 inputs (S0 reproduces v2 exactly: True) and with v3 statuses (S1): planets that fetched abstracts call candidates or dispute get the 0.5 weight v2 already gives to NASA-controversial planets: GJ 15 A b, GJ 251 c, GJ 682 b, GJ 682 c, Gl 725 A b. No refuted planet is in the scored table (the refuted ones — Barnard b 233 d, van de Kamp's planets, GJ 667 C d, VB 10 b — had already been removed from the NASA table). Atmosphere/JWST results are logged but are not part of the score. Changes in the top 20: see <code>raw/findings/rank_check/rank_comparison_v2_v3.csv</code>.</p>
+<h2>Coverage gaps (not fetched / not found)</h2>
+<ul>
+<li>Press releases (ESO/NASA/ESA/JAXA/CNSA): none were fetched; JAXA/CNSA show up only when an abstract names their missions (AKARI, CSST).</li>
+<li>Astrospheres (Wood et al. HST Lyα): no machine-readable VizieR table was found under the IDs tried; astrosphere findings come only from abstracts (72 rows).</li>
+<li>Technosignature searches: Breakthrough Listen/FAST result tables were not found on VizieR; target-list membership (Isaacson+2017) is logged as 'reported' and <strong>is not a non-detection</strong>; actual search results only from abstracts.</li>
+<li>DEBRIS (Sibthorpe+2018) and Lestrade+2012 catalogues not found under the IDs tried; debris disk results come from DUNES, Montesinos+2016, Chen+2014 and abstracts.</li>
+<li>Author affiliations not fetched; institution/country = facility operator (assumption above).</li>
+<li>SIMBAD measurement tables (mesFe_h etc.) carry no uncertainties or instruments.</li>
+<li>NASA hosts not matched to a v3 target: 3 v2 hosts (CWISEP J193518.59-154620.3, HD 63433, TOI-540; their SIMBAD objects are not in the target list); others are beyond 50 ly.</li>
+<li>Tier D (20–50 ly, no planets): 150 systems have no finding from the fetched sources.</li>
+</ul></body></html>
