@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Star map v4: data and assumptions</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:1100px;margin:2em auto;padding:0 1em;background:#0b1020;color:#dfe6f3}a{color:#8fc7ff}table{border-collapse:collapse;font-size:12.5px}td,th{border:1px solid #2a3654;padding:2px 5px;vertical-align:top}code{background:#18213a;padding:0 3px}</style></head><body><p><a href="../index.html">← Home</a></p><h1>Star map v4: data, methods and visual assumptions</h1>
+<p>Built 2026-10-20 by Grok Bot. The file is <code>starmap_v4.html</code> (self-contained, three.js r147). It uses the same 1,267 systems, v3 ranking and findings log as v3. No values were written from memory. Everything below comes from fetched files in <code>raw/</code> and <code>raw/v4/</code>.</p>
+<h2>Real data (sourced)</h2>
+<ul>
+<li><strong>Positions and distances:</strong> SIMBAD/Gaia astrometry, the same as v3.</li>
+<li><strong>Star colours:</strong> blackbody sRGB colour of each component's measured Teff, from Mitchell Charity's "What colour is a blackbody?" 2° table (raw/v4/bbr_color_2deg_subset.txt; 1000–40000 K).</li>
+<li>Teff is present for 1,110 of the 1,413 components.</li>
+<li>Teff source priority: VizieR (Schweitzer+2019 J/A+A/625/A68, Mann+2015 J/ApJ/804/64, Boyajian+2012 J/ApJ/746/101) &gt; NASA Exoplanet Archive stellarhosts &gt; SIMBAD mesFe_h median &gt; Gaia DR3 astrophysical parameters.</li>
+<li>Counts by source: SIMBAD 679, Schweitzer 220, Gaia 80, NASA 59, Mann 46, Boyajian 26.</li>
+<li>Components with no Teff are drawn grey.</li>
+<li><strong>Planets:</strong> 229 confirmed planets from the NASA Exoplanet Archive pscomppars (raw/v4/nasa_pscomp_orbits.csv).</li>
+<li>Orbital elements a, e, i and ω, plus period, mass and radius.</li>
+<li>Inclination is known for 77 planets. A measured radius exists for 42.</li>
+<li><strong>Habitable zone:</strong> conservative and optimistic limits from the Kopparapu et al. 2014 Seff fits (the same as v2/v3). Ring radii are √(L/Seff), with L = insolation·a² from the archive.</li>
+<li><strong>Disputed/candidate status:</strong> from the v3 curated status list and the NASA <code>pl_controv_flag</code> (22 planets, drawn as dashed orange orbits).</li>
+<li><strong>Debris disks:</strong> 16 disks have a catalogue blackbody dust radius (DUNES "Rdust" text) and are drawn as pink rings. The other disks in the findings log have no radius and are not drawn.</li>
+<li><strong>Background sky:</strong> Hipparcos (ESA 1997, VizieR I/239) stars with V&lt;6.5 that lie beyond 50 ly or have no parallax.</li>
+<li>8,650 stars, coloured from B–V → Teff using the Ballesteros 2012 formula.</li>
+<li><strong>Constellation lines:</strong> Stellarium "modern" sky culture (index.json; IAU figures as drawn by Stellarium), 219 segments.</li>
+</ul>
+<h2>Visual assumptions (flagged in the viewer)</h2>
+<ul>
+<li><strong>Star sizes in the map:</strong> point size ∝ L_G^0.25, with M_G,sun = 4.67 assumed. This is an illustrative size, not a real angular size. Brown dwarfs and white dwarfs get fixed small sizes.</li>
+<li><strong>Glow:</strong> a sprite halo, not physical bloom. There is no post-processing bloom pass.</li>
+<li><strong>Milky Way band:</strong> a schematic band along galactic b=0 (off by default). It is not a survey image.</li>
+<li><strong>System view:</strong></li>
+<li>Star and planet radii are exaggerated. The factor is shown in the system bar.</li>
+<li>Planet colour is neutral grey: "artist's colour — unknown".</li>
+<li>Planet size uses the measured radius where it exists. Otherwise it uses the archive's mass–radius estimate, which is flagged.</li>
+<li><strong>Orbit orientation:</strong></li>
+<li>Ω (longitude of node) is unknown for these planets and is set to 0.</li>
+<li>A missing inclination is drawn face-on (i=0).</li>
+<li>A missing ω is set to 0.</li>
+<li>A missing e is set to 0.</li>
+<li><strong>Companions:</strong> placed at their <em>projected</em> sky-plane separation, computed from SIMBAD coordinates and distance. This is not the true 3D or WDS orbital separation, so true separations are ≥ the projected value.</li>
+<li><strong>Orbital phase:</strong> the animation starts at an arbitrary epoch (t=0 at periastron). It is not the planets' real current positions.</li>
+</ul>
+<h2>Limits</h2>
+<ul>
+<li>Teff is missing for 303 components.</li>
+<li>152 planets lack inclination.</li>
+<li>Only 16 disk radii are available, and they are blackbody estimates; real disks are often larger.</li>
+<li>The Mitchell Charity table was transcribed from a fetched page (the box download timed out).</li>
+<li>Headless screenshots use a test copy of the viewer with instant camera flights. The shipped file has smooth flights.</li>
+<li>Deep link: <code>starmap_v4.html#sys=&lt;name&gt;</code> opens a system view directly.</li>
+</ul></body></html>
