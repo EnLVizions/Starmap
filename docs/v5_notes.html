@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Star map v5: sources, clusters, images</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:1100px;margin:2em auto;padding:0 1em;background:#0b1020;color:#dfe6f3}a{color:#8fc7ff}table{border-collapse:collapse;font-size:12.5px}td,th{border:1px solid #2a3654;padding:2px 5px;vertical-align:top}code{background:#18213a;padding:0 3px}</style></head><body><p><a href="../index.html">← Home</a></p><h1>Star map v5: notes</h1>
+<p><strong>New in v5</strong>
+- <strong>Star data sheets.</strong> Each star has a data sheet with values from 8 catalogues, and every value is labelled with its catalogue and institution.
+- <strong>DSS2 sky images.</strong> Every system has a 5′ DSS2 sky image, loaded only when its panel opens.
+- <strong>Star clusters.</strong> The map shows 695 open clusters and moving groups within 500 pc (1,630 ly), taken from Hunt &amp; Reffert 2023. They are plotted at their measured galactic positions. Clicking a cluster shows its distance, member count, age, extinction, radial velocity and proper motion, plus its DSS2 image (119 clusters have one). The Pleiades, Hyades, NGC 3532 and NGC 2547 also have ESO or NOIRLab photos.
+- <strong>Planets.</strong> Planet entries now show the discovery method, facility, year and place, plus Teq, density and mass errors. Stars with TESS TOIs list them.
+- <strong>Images.</strong> All images are separate JPEGs under img/v5/ and load lazily.</p>
+<p><strong>Limitations (please read)</strong>
+- <strong>Positional matches only.</strong> GALEX, eRASS1 and WDS are matched by position: the Gaia positions are propagated to each survey's epoch, then matched within fixed radii. A few matches will be wrong in crowded fields or close pairs.
+- <strong>eRASS1 sky coverage.</strong> eRASS1 covers only the German half of the eROSITA sky (galactic longitude &gt; 180°), so a missing X-ray value does not mean the star is not an X-ray source.
+- <strong>Model-based Gaia values.</strong> FLAME ages and masses depend on the models used, and GSP-Phot [M/H] and Teff are known to be biased for M dwarfs. Where catalogues disagree, all values are shown and none are averaged.
+- <strong>Computed values.</strong> The W1−W4 colour and the X-ray luminosity are calculated here from catalogue fluxes and the distance.
+- <strong>DSS images.</strong> DSS plates date from the 1950s to the 1990s, so nearby high-proper-motion stars (for example alpha Cen) can sit off-centre in their cutouts, and very bright stars saturate.
+- <strong>Missing clusters.</strong> The Ursa Major moving group is not in Hunt &amp; Reffert, so it is not shown. Very large, nearby groups such as beta Tuc have their image FOV capped at 12°.
+- <strong>Marker size.</strong> Cluster marker size reflects the half-member radius; it is a display choice, not a true angular size.
+- <strong>Sources not added.</strong> exoplanet.eu (and its Paris VO TAP) still could not be reached from the build machine on 23 Oct 2026 (TLS errors and timeouts), so it was not added.
+- <strong>LAMOST coverage.</strong> LAMOST has a bright limit and observes the northern sky, so only about 90 nearby stars have LAMOST values. LRS M-type matches whose catalogue Gaia DR3 ID disagrees with ours were dropped. LASP [Fe/H] is not calibrated for M dwarfs.
+- <strong>CARMENES matches.</strong> These are positional (J2000 positions, 20″ radius, nearest match, one catalogue star per map star) and are shown with their Karmn ID. Wide pairs could be swapped.
+- <strong>JWST pointings.</strong> MAST pointings within 36″ of a star are listed. A pointing can belong to a neighbour or a background target, and calibration or target-acquisition exposures are included.</p>
+<p><strong>v5b additions (23 Oct 2026)</strong>
+- <strong>LAMOST DR11 (NAOC, China).</strong> LRS M-type parameters: 50 stars. MRS parameters: 29. LAMOST M-dwarf catalogue: 10. LRS spectra listed by Gaia ID: 19.
+- <strong>CARMENES (CAHA, Spain/Germany).</strong> Star counts by table:
+  - Schweitzer+19: 221
+  - Marfil+21: 251
+  - Reiners+22: 218
+  - Ribas+23: 257
+  - Shan+24: 258
+  - Fuhrmeister+23: 248
+  - 17 planets in the map are credited as CARMENES discoveries (from the NASA archive's disc_instrument field).
+- <strong>JWST.</strong> MAST lists 336,727 JWST pointings. Of these, 798 program/instrument/target groups fall near 319 stars in 304 systems (127 programs). 14 published JWST results with DOIs (checked via Crossref) cover 12 systems. Images: ESA/Webb weic2312a (Fomalhaut) and weic2421a (eps Ind Ab), both CC BY 4.0, and a NASA image of Vega.
+- <strong>Layout.</strong> The footer credits now hide while the side panel is open and no longer overlap it.</p>
+<h2>v5c additions (Oct 2026)</h2>
+<ul>
+<li><strong>Newer survey images</strong> for all 1272 systems: Pan-STARRS1 (942), DESI Legacy Surveys DR10 (219), SkyMapper DR4 (111), via CDS hips2fits. Caption gives survey epoch; gold cross = position at image epoch, cyan ring = position now (2026.8) from Gaia DR3 proper motion. DSS2 kept in a fold-out.</li>
+<li><strong>Moving groups</strong> (BANYAN Σ, Gagné et al. 2018): 19 groups added (incl. Ursa Major core, AB Dor, β Pic, TW Hya…), member lists attached to 7 existing HR23 entries; selecting a group highlights its members in gold. 14 map stars are BANYAN members (AB Dor 10, β Pic 3, Carina-Near 1). Ursa Major's 10 listed core members lie at ≈82 ly, outside the 50-ly map.</li>
+<li><strong>APOGEE DR17</strong> (134 stars) and <strong>GALAH DR4</strong> (35 stars) RV/Teff/logg/abundances, matched by Gaia DR3 ID, flagged values omitted.</li>
+<li><strong>ESO HARPS/ESPRESSO</strong> archive holdings: 363 / 121 stars (positional match, 20″ + proper motion).</li>
+<li><strong>Chandra Source Catalog 2.1</strong>: 80 stars with an X-ray source (positional, 3″ + pm).</li>
+<li><strong>Gaia DR3 XP spectra</strong> sparklines (ESA/DPAC).</li>
+<li><strong>Top-10 verification</strong>: every finding of the 10 top-ranked systems carries a status: hand-verified (abstract read by hand), abstract-checked (automatic: object+value found in abstract), reference-checked (paper exists, title matches), keyword-derived (not checked), or source-disagrees. GJ 1002 b/c: the cited RNAAS note doubts the signal's significance — flagged.</li>
+<li>exoplanet.eu retried once: still unreachable (HTTP 000). Hubble/Spitzer press images not added (licence per-image unclear).</li>
+</ul>
+<h2>v5d additions (2026-10-23)</h2>
+<ul>
+<li><strong>0.23c routes (3D)</strong> for the map's top 10 (<code>P.routes</code>, <code>pipeline/v5/prep_routes.py</code>). Each line runs from the Sun to the nav intercept point (8 systems); for GJ 667 and GJ 628, which are not in the nav v2 set, it runs to the current position and uses the SOURCES_v1.1 trip-time formula. Line colour shows the ship-frame ISM proton energy (γ−1)m_pc², taken from the design speed profile (boost, coast, magsail, fusion). This is a radiation-exposure proxy based on speed only. Each route has a hazard panel listing the LISM clouds (projection only; crossing positions <strong>unknown</strong>, so not drawn), the assumed n_i = 0.1 cm⁻³, the derived column density, and dust hazard = <strong>unknown</strong>.</li>
+<li><strong>Hand verification extended to ranks 11–30</strong> (<code>verify_top10.py</code>): GJ 682, GJ 251, HD 20794, GJ 15 A and GJ 3378 abstracts were read. Badge counts are in the report.</li>
+<li><strong>Open Exoplanet Catalogue cross-check</strong> (<code>prep_oec.py</code>): a <em>substitute</em> for exoplanet.eu, which was unreachable. Flags status conflicts, period differences &gt;2%, mass differences &gt;30% and planets missing from OEC. OEC imports most planets from the NASA archive, so agreement between the two is not independent confirmation.</li>
+<li><strong>System view:</strong> faint blue ellipses show a ± 1σ (NASA pscomppars errors, <code>prep_orberr.py</code>). The caption names every planet whose i, e or ω is unknown and drawn with an ASSUMED value. Ω is assumed to be 0 everywhere.</li>
+<li><strong>Press images</strong> (<code>fetch_press2.py</code>, <code>prep_press2.py</code>): ESA/Hubble, ESA/Webb, ESO and NOIRLab. Each image page was checked for type (Observation/Photographic/Collage), absence of third-party ©, a CC BY 4.0 link, and no artwork or annotated keywords in the title.</li>
+<li><strong>Accessibility:</strong> a colour-blind-safe ramp (cividis routes, blue/yellow HZ), text size (normal / large / x-large) and reduced motion (also honours prefers-reduced-motion). Settings are saved in localStorage.</li>
+</ul>
+<h2>v5e (2026-10-23)</h2>
+<ul>
+<li>Route hazards for top-30 routes (prep_hazards.py): Leike+2020 3D dust (MPIA/MPA, Germany; Zenodo 3993082) integrated A_G ± σ along each route (only 1–12 voxels of 1 pc; inner-region resolution poor; E(B−V) not given to avoid assuming an extinction law); Edenhofer+2024 cut inside 69 pc so not used for routes; STILISM (France) was unreachable. In-situ ISD flux from Krüger+2019 (MPS, Germany) incl. Ulysses/Galileo/Cassini. GCR beyond heliopause from Voyager 1 (Cummings+2016; NASA/JPL, USA). Target mass-loss from Wood+2021 Ly-α astrospheres; TESS flare rates from Medina+2020 (CfA, USA), matched by TIC ID.</li>
+<li>LIC crossings: only the published α Cen value (Redfield &amp; Linsky 2000); my re-implementation of their model did not reproduce their Table 3, so all other crossings stay "unknown".</li>
+<li>Hand verification extended to ranks 31–60 (Barnard b refuted; Kapteyn b/c disputed, with Anglada-Escudé+2016 rebuttal marked source-disagrees; GJ 1151 candidate; VB 10 candidate refuted by RV).</li>
+<li>NASA Image Library: 1 hand-reviewed real observation (HST α Cen A/B); no Spitzer observation of a top-60 target found.</li>
+</ul>
+<h2>v6 UI (2026-10-23)</h2>
+<p><code>starmap_v6.html</code> uses the same v5 payload and engine (<code>pipeline/v5/template_v5.html</code>) inside a new shell (<code>pipeline/v6/</code>: v6.css, v6_dom.html, v6.js, render_v6.py, shots_v6.js). The changes are all in the interface; no data was added:
+- the sky fills the screen, with a dock at the bottom;
+- a ⌘K / <code>/</code> palette searches systems, planets, clusters, routes and commands;
+- a ranked side list has filter chips and j/k keys;
+- each system has a tabbed page: Summary, Planets, Findings, Hazards, Images and Data sheet;
+- breadcrumbs, and Esc to go back;
+- deep links: <code>#sys=&amp;tab=</code>, <code>#cl=</code>, <code>#route=</code>, <code>#panel=list|settings</code>, <code>#pal=1</code>;
+- an onboarding tour, saved in localStorage <code>sm6_onboard</code>.</p>
+<p>Findings, data-sheet properties and XP light curves (about 5.7 MB) are in <code>starmap_v6_lazy.js</code>. That file loads about 0.6 s after the map appears, so the initial HTML is about 2.5 MB instead of 8 MB.</p>
+<h3>v6.1 refinements (2026-10-23)</h3>
+<ul>
+<li><strong>Settings drawer:</strong> split into tabs: Display &amp; legend, Layers, Accessibility, Credits.</li>
+<li><strong>System view:</strong> the caption and time bar collapse (collapsed by default on mobile).</li>
+<li><strong>Routes button:</strong> the dock's Routes button follows the real route layer visibility.</li>
+<li><strong>Ranked list:</strong> virtualized, so all 1,267 rows are reachable.</li>
+<li><strong>Star pages:</strong></li>
+<li>a one-line plain-language summary at the top, built only from payload fields: spectral type (or Teff when no type is catalogued), distance, planet status counts and HZ flags;</li>
+<li>hover titles explain abbreviations (A_G, v sin i, [Fe/H], log g, Teff, Msini, RUWE and others);</li>
+<li>share, and print (all tabs).</li>
+<li><strong>Compare mode:</strong> pin up to 3 systems with 📌 or P, open with M or <code>#cmp=a,b,c</code>.</li>
+<li><strong>Accessibility polish:</strong> focus rings, ARIA roles and labels, arrow-key tabs, tooltips on dock buttons, a spacing and type scale.</li>
+<li><strong>Smoke tests:</strong> <code>pipeline/v6/tests_v6.js</code> (puppeteer) covers the key flows, checks for JS errors and runs a WCAG AA contrast scan. Results go to <code>tests_v6_results.json</code>.</li>
+</ul>
+<h3>v6.2 (2026-10-23)</h3>
+<ul>
+<li><strong>Sky readability:</strong></li>
+<li>collision-avoiding labels (right, left, above or below; priority goes to top-10 rank, then rank ≤50, then apparent brightness, planets and nearness);</li>
+<li>label density Few / Normal / Many (<code>#dens=0|2</code>);</li>
+<li>dark halo backdrop on labels (AA contrast even over a white star glow);</li>
+<li>distance rings at 5, 10, 20 and 50 ly with labels;</li>
+<li>constellation-line toggle;</li>
+<li>hover card ("what am I looking at");</li>
+<li>camera presets: Sun view, top-down galactic, Earth's night sky (<code>#view=sun|top|night</code>; the night view is from the Sun's position, since Earth is the same point at this scale).</li>
+<li><strong>Guided tours</strong> (<code>#tour=near|best|jwst|haz&amp;step=n</code>) are built only from payload data:</li>
+<li>nearest 6 systems;</li>
+<li>top 5 by the map's v3 score (a project ranking);</li>
+<li>systems with JWST-based findings logged as "confirmed", with MAST (STScI, USA) observation counts and positional-match caveats;</li>
+<li>route hazards: LIC edge (Redfield &amp; Linsky), the dustiest route (Leike+2020, MPA Garching), the most flare-active host (Medina+2020, CfA), GCR (Cummings+2016) and ISD (Krüger+2019).</li>
+<li><strong>Gaps closed:</strong></li>
+<li>tap or Enter on an abbreviation opens a popover;</li>
+<li>compare shows as swipeable cards on mobile;</li>
+<li>the Compare button is visible but disabled, with a hint, before anything is pinned;</li>
+<li>clipboard fallback chain: Clipboard API → execCommand → manual copy dialog.</li>
+<li><strong>Performance:</strong></li>
+<li>label positions use transform with dirty-checking (mobile layouts 8,335 → 75);</li>
+<li>the legacy datalist (about 1,900 options) is built only on focus (DOM 4,085 → 2,155 nodes);</li>
+<li>preserveDrawingBuffer is off;</li>
+<li>map fps went from 50 to 60 (p95 frame from 33 to 17 ms) in headless SwiftShader. See <code>perf_before.json</code> / <code>perf_after.json</code> (<code>pipeline/v6/perf_v6.js</code>).</li>
+<li><strong>Smoke tests:</strong> 33 (was 20).</li>
+</ul>
+<h3>v6.3 (2026-10-23)</h3>
+<ul>
+<li><strong>Load:</strong> <code>starmap_v6.html</code> is now a ~150 KB shell. Data and code live in versioned chunks (<code>?v=&lt;build hash&gt;</code>): <code>starmap_v6_engine.js</code> (three.js + controls), <code>starmap_v6_core.js</code> (positions, clusters, routes, constellations), <code>starmap_v6_lazy.js</code> (findings and data sheets, loaded after first paint) and <code>starmap_v6_sky.js</code> (SIMBAD RA/Dec and proper motions for the Earth sky, loaded only when that view opens). <code>starmap_v6_sw.js</code> is a service worker (http/https only) that precaches the shell and chunks, so repeat visits and offline reloads work. Compression is left to the web host; gzip sizes are reported by <code>render_v6.py</code>. Before/after numbers: <code>perf63_before.json</code>, <code>perf63_after.json</code> (<code>pipeline/v6/perf_v63.js</code>).</li>
+<li><strong>Sky from Earth</strong> (View panel, or <code>#sky=earth&amp;loc=chicago&amp;t=2026-10-23T21:00&amp;ep=2032&amp;lim=suburban</code>): an all-sky dome with horizon, N/E/S/W and 30°/60° altitude circles. Location presets (Chicago by default, America/Chicago), custom latitude/longitude, or “Use my location” (only on click). Date and time are entered in the observer's local time zone. Presets: Now, Tonight 9 pm, and “Pythagoras launch 2032” (same date in 2032; no launch date is in the data). Map stars use SIMBAD (CDS, France) J2000 positions, moved by proper motion and precessed with IAU 1976. Nutation, aberration and refraction are ignored. Background stars: Hipparcos (ESA). Figures: Stellarium. “Visible on this night” lists map stars brighter than the chosen limit that reach ≥15° altitude while the Sun is below −12°. V magnitudes are used where SIMBAD has them, otherwise Gaia G (ESA), which flatters red dwarfs.</li>
+<li><strong>Label styles:</strong> Box (default), Light (half-transparent backdrop plus halo) and Halo (text outline, no box). Choose in the View panel or with <code>#lab=</code>; the choice is remembered. All three pass the AA contrast test over a white glow and over the dark sky.</li>
+<li><strong>Touch:</strong> long-press (~0.5 s) on a star shows the hover card without opening the star.</li>
+<li><strong>JWST tour</strong> is rebuilt from <code>raw/v5/jwobs.json</code> (<code>pipeline/v6/prep_jwobs.py</code>). Of the 277 JWST-tagged literature rows, 24 papers across 14 systems describe new JWST observations in their title or abstract. Their statuses are unchanged: 2 confirmed, 15 reported, 6 non-detection, 1 disputed. Modelling and feasibility papers are excluded, as are earlier “confirmed” JWST rows that were not observations. The tour shows up to 8 systems with quote, citation link, status badge and the MAST positional-match caveat.</li>
+</ul></body></html>
